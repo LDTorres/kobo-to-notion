@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+logs/*
+KoboReader.sqlite
+sync.arm
+
 # Test binary, built with `go test -c`
 *.test
 
@@ -23,3 +27,13 @@ go.work.sum
 
 # env file
 .env
+env
+
+# MacOS
+.DS_Store
+
+# Release files
+release.zip
+
+# Temp
+temp
