@@ -1,7 +1,15 @@
 #!/bin/sh
 
-# Change permissions
-chmod +x /mnt/onboard/.adds/notion_sync/sync.arm
+# Copy config file to NickelMenu
+cp -f /mnt/onboard/.adds/notion_sync/notion_sync.conf /mnt/onboard/.adds/nm/notion_sync.conf
 
-# Run the sync script
-/mnt/onboard/.adds/notion_sync/sync.arm
+cd /mnt/onboard/.adds/notion_sync
+
+# Change permissions
+chmod +x sync.arm
+
+echo "Starting sync at $(date)" >> sync.log
+sync.arm >> sync.log 2>&1
+echo "Finished sync with exit code $?" >> sync.log
+
+exit 0

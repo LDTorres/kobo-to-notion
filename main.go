@@ -6,8 +6,6 @@ import (
 	"kobo-to-notion/logger"
 	"kobo-to-notion/notion"
 	"kobo-to-notion/utils"
-
-	"github.com/jomei/notionapi"
 )
 
 func main() {
@@ -24,19 +22,21 @@ func main() {
 	}
 
 	// Retrieve credentials
-	notionToken, databaseID, dbPath, certPath := config.GetConfig()
+	config, err := config.GetConfig()
 
-	// Configure a secure HTTP client with embedded certificates
-	httpClient, err := utils.ConfigureSecureHTTPClientWithFile(certPath)
 	if err != nil {
-		logger.Logger.Fatalf("Error configuring secure HTTP client: %v", err)
+		logger.Logger.Fatalf("Error retrieving configuration: %v", err)
 	}
-	
+
 	// Initialize Notion client
-	client := notionapi.NewClient(notionapi.Token(notionToken), notionapi.WithHTTPClient(httpClient))
+	err = notion.InitializeNotionClient(config.CertPath, config.NotionToken, config.DatabaseID)
+
+	if err != nil {
+		logger.Logger.Fatalf("Error initializing Notion client: %v", err)
+	}
 
 	// Fetch existing bookmarks from Notion
-	existingBookmarks, err := notion.GetNotionBookmarkIDs(client, databaseID)
+	existingBookmarks, err := notion.GetNotionBookmarkIDs(config.DatabaseID)
 
 	if err != nil {
 		logger.Logger.Fatalf("Error fetching Notion bookmarks: %v", err)
@@ -45,7 +45,7 @@ func main() {
 	logger.Logger.Println("Existing bookmarks:", len(existingBookmarks))
 
 	// Fetch new highlights from Kobo database
-	bookmarks, err := kobo.GetBookmarks(dbPath)
+	bookmarks, err := kobo.GetBookmarks(config.DBPath)
 
 	if err != nil {
 		logger.Logger.Fatalf("Error retrieving highlights from database: %v", err)
@@ -60,7 +60,8 @@ func main() {
 	for _, bookmark := range newBookmarks {
 		logger.Logger.Printf("Adding Bookmark: %s\n", bookmark.BookmarkID)
 
-		err := notion.AddBookmarkToNotion(client, databaseID, bookmark)
+		_, err := notion.AddBookmarkToNotion(config.DatabaseID, bookmark)
+
 		if err != nil {
 			logger.Logger.Printf("Error adding highlight to Notion: %v", err)
 		} else {

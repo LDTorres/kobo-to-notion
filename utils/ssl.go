@@ -3,16 +3,17 @@ package utils
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"embed"
 	"fmt"
 	"net/http"
 	"os"
 )
 
-var certsFS embed.FS
-
 // ConfigureSecureHTTPClientWithFile creates an HTTP client with certificates from a file
 func ConfigureSecureHTTPClientWithFile(certPath string) (*http.Client, error) {
+	if certPath == "" {
+		return nil, nil
+	}
+
 	// Create a new certificate pool
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil || rootCAs == nil {

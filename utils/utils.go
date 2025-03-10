@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"errors"
 	"kobo-to-notion/kobo"
-	"kobo-to-notion/logger"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,6 +28,10 @@ func FilterNewBookmarks(bookmarks []kobo.Bookmark, existingBookmarks map[string]
 }
 
 func ParseKoboBookmarkDate(dateStr string) (time.Time, error) {
+	if dateStr == "" {
+		return time.Time{}, errors.New("empty date string")
+	}
+
 	if !strings.HasSuffix(dateStr, "Z") {
 		dateStr += "Z"
 	}
@@ -35,7 +39,6 @@ func ParseKoboBookmarkDate(dateStr string) (time.Time, error) {
     parsedDate, err := time.Parse(time.RFC3339, dateStr)
 	
     if err != nil {
-        logger.Logger.Println("Could not parse time:", err)
 		return time.Time{}, err
     }
 

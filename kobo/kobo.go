@@ -15,19 +15,40 @@ type Bookmark struct {
 	DateCreated string
 }
 
-// Fetch bookmarks from Kobo SQLite database
-func GetBookmarks(dbPath string) ([]Bookmark, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+// DatabaseAccessor defines an interface for database operations
+type DatabaseAccessor interface {
+	GetBookmarks() ([]Bookmark, error)
+}
+
+// SQLiteAccessor implements DatabaseAccessor for SQLite database
+type SQLiteAccessor struct {
+	DBPath string
+}
+
+// NewSQLiteAccessor creates a new instance of SQLiteAccessor
+func NewSQLiteAccessor(dbPath string) *SQLiteAccessor {
+	return &SQLiteAccessor{
+		DBPath: dbPath,
+	}
+}
+
+// GetBookmarks fetches bookmarks from a Kobo SQLite database
+func (sa *SQLiteAccessor) GetBookmarks() ([]Bookmark, error) {
+	db, err := sql.Open("sqlite3", sa.DBPath)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
+	return queryBookmarks(db)
+}
+
+func queryBookmarks(db *sql.DB) ([]Bookmark, error) {
 	query := `
     SELECT
       BookmarkID,
       VolumeID,
-      Text,
+      IFNULL(Text, '') AS Text,
       IFNULL(Annotation, 'None') AS Annotation,
       Type,
       DateCreated
@@ -44,12 +65,22 @@ func GetBookmarks(dbPath string) ([]Bookmark, error) {
 
 	var bookmarks []Bookmark
 	for rows.Next() {
-		var h Bookmark
-		if err := rows.Scan(&h.BookmarkID, &h.VolumeID, &h.Text, &h.Annotation, &h.Type, &h.DateCreated); err != nil {
+		var bm Bookmark
+		if err := rows.Scan(&bm.BookmarkID, &bm.VolumeID, &bm.Text, &bm.Annotation, &bm.Type, &bm.DateCreated); err != nil {
 			return nil, err
 		}
-		bookmarks = append(bookmarks, h)
+		bookmarks = append(bookmarks, bm)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return bookmarks, nil
+}
+
+func GetBookmarks(dbPath string) ([]Bookmark, error) {
+	accessor := NewSQLiteAccessor(dbPath)
+	return accessor.GetBookmarks()
 }

@@ -1,6 +1,10 @@
 # kobo-to-notion-sync
 
-A simple tool to sync your Kobo highlights / notes to Notion.
+A simple tool to export your Kobo highlights or annotations to Notion. It uses the Notion API to create a new database page for each highlight or note.
+
+## Export example
+
+![Table view with page details](https://github.com/ldtorres/kobo-to-notion/blob/main/images/notion-table-view.png)
 
 ## Prerequisites
 
@@ -124,6 +128,20 @@ go build -o sync
    ```sh
    docker run --rm -it -v $(pwd):/app arm-go-builder bash -c "CC=arm-linux-gnueabi-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags '-extldflags -static' -o sync.arm"
    ```
+
+3. Use the build-release.sh script to create a release zip file and copy the content inside the kobo device:
+
+   ```sh
+   cd ./scripts
+   bash ./build-release.sh
+   ```
+
+## Remove script from Kobo
+
+1. Remove notion_sync folder from .adds folder 
+2. Remove notion_sync.conf from NM config folder
+
+Thats it!
 
 ## Troubleshooting
 

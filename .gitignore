@@ -29,11 +29,14 @@ go.work.sum
 .env
 env
 
+!scripts/release_files/.env
+
 # MacOS
 .DS_Store
 
 # Release files
 release.zip
+kobo-to-notion
 
 # Temp
 temp

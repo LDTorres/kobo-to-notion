@@ -24,6 +24,7 @@ echo "Copying release files..."
 cp -r ./release_files/* "$TEMP_FOLDER/notion_sync/"
 cp ./release_files/notion_sync.conf "$TEMP_FOLDER"
 cp ./release_files/readme.txt "$TEMP_FOLDER"
+mkdir "$TEMP_FOLDER/notion_sync/certs"
 
 # Download certificates
 curl -o cacert.pem https://curl.se/ca/cacert.pem
@@ -32,10 +33,8 @@ echo "Copying certificates..."
 mv -f cacert.pem "$TEMP_FOLDER/notion_sync/certs/"
 
 # Build Docker image if it does not exist
-if [[ "$(docker images -q $DOCKER_IMAGE_NAME 2> /dev/null)" == "" ]]; then
-    echo "Building Docker image..."
-    docker build -t "$DOCKER_IMAGE_NAME" ..
-fi
+echo "Building Docker image..."
+docker build -t "$DOCKER_IMAGE_NAME" ..
 
 # Compile the binary for ARM
 echo "Compiling binary for ARM (This may take a while)"
