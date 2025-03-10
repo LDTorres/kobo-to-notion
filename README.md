@@ -39,7 +39,7 @@ Before using this tool, ensure that **NickelMenu** is installed on your Kobo dev
 
 ### 4. Download release
 
-Download the latest release zip file from the [releases page](https://github.com/ldtorres/kobo-to-notion-sync/releases).
+Download the latest release zip file from the [releases page](https://github.com/LDTorres/kobo-to-notion/releases).
 
 ## 5. Install tools and Configure on the Kobo
 
