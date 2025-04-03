@@ -9,63 +9,93 @@ import (
 )
 
 func main() {
-	err := logger.Init("./logs/app.log")
+	err := initLogger()
 	if err != nil {
-		logger.Logger.Fatalf("Failed to initialize logger: %v", err)
+		logger.Logger.Fatalf("Failed to initialize: %v", err)
 	}
 	defer logger.Close()
 
-	// Load environment variables
-	err = config.LoadEnv()
+	// Load configuration
+	appConfig, err := loadConfiguration()
 	if err != nil {
-		logger.Logger.Fatalf("Error loading .env file: %v", err)
+		logger.Logger.Fatalf("Error loading configuration: %v", err)
 	}
-
-	// Retrieve credentials
-	config, err := config.GetConfig()
-
-	if err != nil {
-		logger.Logger.Fatalf("Error retrieving configuration: %v", err)
-	}
-
+	
 	// Initialize Notion client
-	err = notion.InitializeNotionClient(config.CertPath, config.NotionToken, config.DatabaseID)
-
+	err = notion.InitializeNotionClient(appConfig.CertPath, appConfig.NotionToken, appConfig.DatabaseID, appConfig.CreateIndividualBookmarks)
 	if err != nil {
 		logger.Logger.Fatalf("Error initializing Notion client: %v", err)
 	}
 
-	// Fetch existing bookmarks from Notion
-	existingBookmarks, err := notion.GetNotionBookmarkIDs(config.DatabaseID)
+	// Process bookmarks based on configuration
+	processBookmarks(appConfig)
+}
 
+// Initialize the logger
+func initLogger() error {
+	return logger.Init("./logs/app.log")
+}
+
+// Load configuration from environment
+func loadConfiguration() (config.Config, error) {
+	err := config.LoadEnv()
 	if err != nil {
-		logger.Logger.Fatalf("Error fetching Notion bookmarks: %v", err)
+		return config.Config{}, err
 	}
 	
-	logger.Logger.Println("Existing bookmarks:", len(existingBookmarks))
+	return config.GetConfig()
+}
 
-	// Fetch new highlights from Kobo database
+// Fetch data and process bookmarks 
+func processBookmarks(config config.Config) {
+	logger.Logger.Printf("Creating bookmarks individually: %v\n", config.CreateIndividualBookmarks)
+	
+	// Fetch bookmarks from Kobo database
 	bookmarks, err := kobo.GetBookmarks(config.DBPath)
-
 	if err != nil {
 		logger.Logger.Fatalf("Error retrieving highlights from database: %v", err)
 	}
+	
+	if config.CreateIndividualBookmarks {
+		processIndividualBookmarks(config.DatabaseID, bookmarks)
+	} else {
+		processGroupedBookmarks(config.DatabaseID, bookmarks)
+	}
+}
 
-	// Filter new highlights (only those not in Notion)
+// Process bookmarks individually 
+func processIndividualBookmarks(databaseID string, bookmarks []kobo.Bookmark) {
+	// Get existing bookmark IDs
+	existingBookmarks, err := notion.GetNotionBookmarkIDs(databaseID)
+	if err != nil {
+		logger.Logger.Fatalf("Error fetching Notion bookmarks: %v", err)
+	}
+	logger.Logger.Println("Existing bookmarks:", len(existingBookmarks))
+	
+	// Filter new highlights
 	newBookmarks := utils.FilterNewBookmarks(bookmarks, existingBookmarks)
+	logger.Logger.Printf("New bookmarks to add individually: %d\n", len(newBookmarks))
+	
+	// Add to Notion
+	err = notion.AddBookmarksToNotion(databaseID, newBookmarks)
+	if err != nil {
+		logger.Logger.Fatalf("Error adding bookmarks to Notion: %v", err)
+	}
+}
 
-	logger.Logger.Printf("New bookmarks to add: %d\n", len(newBookmarks))
-
-	// Add new highlights to Notion
-	for _, bookmark := range newBookmarks {
-		logger.Logger.Printf("Adding Bookmark: %s\n", bookmark.BookmarkID)
-
-		_, err := notion.AddBookmarkToNotion(config.DatabaseID, bookmark)
-
-		if err != nil {
-			logger.Logger.Printf("Error adding highlight to Notion: %v", err)
-		} else {
-			logger.Logger.Println("Bookmark successfully added to Notion!")
-		}
+// Process bookmarks grouped by book
+func processGroupedBookmarks(databaseID string, bookmarks []kobo.Bookmark) {
+	// Get existing book pages
+	_, err := notion.GetBookPagesByName(databaseID)
+	if err != nil {
+		logger.Logger.Fatalf("Error fetching Notion book pages: %v", err)
+	}
+	
+	logger.Logger.Printf("Processing %d bookmarks in grouped mode\n", len(bookmarks))
+	
+	// Add to Notion
+	err = notion.AddBookmarksToNotion(databaseID, bookmarks)
+	if err != nil {
+		logger.Logger.Fatalf("Error adding bookmarks to Notion: %v", err)
 	}
 }

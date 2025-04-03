@@ -83,6 +83,7 @@ func TestGetConfigWithLoader(t *testing.T) {
 		mock.SetEnv("NOTION_DATABASE_ID", "test_database_id")
 		mock.SetEnv("KOBO_DB_PATH", "/path/to/kobo.db")
 		mock.SetEnv("CERT_PATH", "/path/to/cert")
+		mock.SetEnv("CREATE_BOOKMARKS_INDIVIDUALLY", "false")
 		
 		config, err := GetConfigWithLoader(mock)
 		
@@ -101,6 +102,75 @@ func TestGetConfigWithLoader(t *testing.T) {
 		}
 		if config.CertPath != "/path/to/cert" {
 			t.Errorf("config.CertPath = %v, want %v", config.CertPath, "/path/to/cert")
+		}
+		if config.CreateIndividualBookmarks != false {
+			t.Errorf("config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, false)
+		}
+	})
+	
+	// Test default value for CreateIndividualBookmarks
+	t.Run("Default CreateIndividualBookmarks", func(t *testing.T) {
+		mock := NewMockEnvLoader()
+		mock.SetEnv("NOTION_TOKEN", "test_token")
+		mock.SetEnv("NOTION_DATABASE_ID", "test_database_id")
+		mock.SetEnv("KOBO_DB_PATH", "/path/to/kobo.db")
+		mock.SetEnv("CERT_PATH", "/path/to/cert")
+		// Not setting CREATE_BOOKMARKS_INDIVIDUALLY
+		
+		config, err := GetConfigWithLoader(mock)
+		
+		if err != nil {
+			t.Errorf("GetConfigWithLoader() error = %v, want nil", err)
+		}
+		
+		// Should default to true
+		if config.CreateIndividualBookmarks != true {
+			t.Errorf("Default config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, true)
+		}
+	})
+	
+	// Test different values for CreateIndividualBookmarks
+	t.Run("Different CreateIndividualBookmarks values", func(t *testing.T) {
+		tests := []struct{
+			name string
+			value string
+			want bool
+		}{
+			{
+				name: "true value",
+				value: "true",
+				want: true,
+			},
+			{
+				name: "false value",
+				value: "false",
+				want: false,
+			},
+			{
+				name: "invalid value",
+				value: "invalid",
+				want: false, // Should be false if not "true"
+			},
+		}
+		
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mock := NewMockEnvLoader()
+				mock.SetEnv("NOTION_TOKEN", "test_token")
+				mock.SetEnv("NOTION_DATABASE_ID", "test_database_id")
+				mock.SetEnv("KOBO_DB_PATH", "/path/to/kobo.db")
+				mock.SetEnv("CREATE_BOOKMARKS_INDIVIDUALLY", tt.value)
+				
+				config, err := GetConfigWithLoader(mock)
+				
+				if err != nil {
+					t.Errorf("GetConfigWithLoader() error = %v, want nil", err)
+				}
+				
+				if config.CreateIndividualBookmarks != tt.want {
+					t.Errorf("config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, tt.want)
+				}
+			})
 		}
 	})
 	
@@ -182,6 +252,7 @@ func TestGetConfig(t *testing.T) {
 	os.Setenv("NOTION_DATABASE_ID", "test_database_id")
 	os.Setenv("KOBO_DB_PATH", "/path/to/kobo.db")
 	os.Setenv("CERT_PATH", "/path/to/cert")
+	os.Setenv("CREATE_BOOKMARKS_INDIVIDUALLY", "false")
 	
 	// Test actual GetConfig
 	config, err := GetConfig()
@@ -195,6 +266,7 @@ func TestGetConfig(t *testing.T) {
 	os.Unsetenv("NOTION_DATABASE_ID")
 	os.Unsetenv("KOBO_DB_PATH")
 	os.Unsetenv("CERT_PATH")
+	os.Unsetenv("CREATE_BOOKMARKS_INDIVIDUALLY")
 	
 	// Assert expected values
 	if config.NotionToken != "test_token" {
@@ -208,5 +280,8 @@ func TestGetConfig(t *testing.T) {
 	}
 	if config.CertPath != "/path/to/cert" {
 		t.Errorf("config.CertPath = %v, want %v", config.CertPath, "/path/to/cert")
+	}
+	if config.CreateIndividualBookmarks != false {
+		t.Errorf("config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, false)
 	}
 }

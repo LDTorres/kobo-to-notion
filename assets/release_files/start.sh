@@ -1,8 +1,4 @@
 #!/bin/sh
-
-# Copy config file to NickelMenu
-cp -f /mnt/onboard/.adds/notion_sync/notion_sync.conf /mnt/onboard/.adds/nm/notion_sync.conf
-
 cd /mnt/onboard/.adds/notion_sync
 
 # Change permissions
