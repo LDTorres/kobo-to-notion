@@ -31,7 +31,7 @@ fi
 
 # Check if the release file exists
 if [[ ! -f "$BASE_PATH/release.zip" ]]; then
-    echo "Release file not found! Please build the release first."
+    echo "release.zip file not found! Please left it on the same folder as this script."
     exit 1
 fi
 
@@ -67,16 +67,6 @@ case "${PLATFORM}" in
 		exit 255
 	;;
 esac
-
-simulateKoboMountFiles() {
-	KOBO_MOUNT_POINT=./test
-	mkdir -p "$KOBO_MOUNT_POINT/.kobo"
-	mkdir -p "$KOBO_MOUNT_POINT/.adds"
-	mkdir -p "$KOBO_MOUNT_POINT/.adds/nm"
-}
-
-# Uncomment this to simulate a Kobo mount point
-# simulateKoboMountFiles
 
 # Sanity check...
 if [[ -z "${KOBO_MOUNT_POINT}" ]] ; then

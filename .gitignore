@@ -43,3 +43,5 @@ temp
 sync
 notion_sync
 .cursor/rules/general.mdc
+
+*.zip
