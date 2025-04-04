@@ -28,11 +28,10 @@ func (d *DefaultEnvLoader) GetEnv(key string) string {
 
 // Config holds all configuration values
 type Config struct {
-	NotionToken              string
-	DatabaseID               string
-	DBPath                   string
-	CertPath                 string
-	CreateIndividualBookmarks bool
+	NotionToken string
+	DatabaseID  string
+	DBPath      string
+	CertPath    string
 }
 
 // LoadEnv loads environment variables from .env file
@@ -52,23 +51,15 @@ func GetConfigWithLoader(loader EnvLoader) (Config, error) {
 	databaseID := loader.GetEnv("NOTION_DATABASE_ID")
 	dbPath := loader.GetEnv("KOBO_DB_PATH")
 	certPath := loader.GetEnv("CERT_PATH")
-	createIndividual := loader.GetEnv("CREATE_BOOKMARKS_INDIVIDUALLY")
 
 	if notionToken == "" || databaseID == "" || dbPath == "" {
 		return Config{}, errors.New("missing required environment variables")
 	}
-	
-	// Default to true for backward compatibility
-	createIndividualBookmarks := true
-	if createIndividual != "" {
-		createIndividualBookmarks = createIndividual == "true"
-	}
 
 	return Config{
-		NotionToken:              notionToken,
-		DatabaseID:               databaseID,
-		DBPath:                   dbPath,
-		CertPath:                 certPath,
-		CreateIndividualBookmarks: createIndividualBookmarks,
+		NotionToken: notionToken,
+		DatabaseID:  databaseID,
+		DBPath:      dbPath,
+		CertPath:    certPath,
 	}, nil
 }

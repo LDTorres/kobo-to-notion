@@ -17,7 +17,7 @@ func createTestDatabase(t *testing.T) (string, func()) {
 	}
 
 	dbPath := filepath.Join(tempDir, "KoboReader.sqlite")
-	
+
 	// Create and setup the test database
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -33,7 +33,8 @@ func createTestDatabase(t *testing.T) (string, func()) {
 			Text TEXT,
 			Annotation TEXT,
 			Type TEXT,
-			DateCreated TEXT
+			DateCreated TEXT,
+			Color TEXT
 		);
 	`)
 	if err != nil {
@@ -44,12 +45,12 @@ func createTestDatabase(t *testing.T) (string, func()) {
 
 	// Insert test data
 	_, err = db.Exec(`
-		INSERT INTO Bookmark (BookmarkID, VolumeID, Text, Annotation, Type, DateCreated) VALUES
-		('bm1', 'vol1', 'Sample text 1', 'Sample annotation 1', 'highlight', '2023-01-04T12:00:00Z'),
-		('bm2', 'vol1', 'Sample text 2', NULL, 'highlight', '2023-01-03T12:00:00Z'),
-		('bm3', 'vol2', NULL, 'Sample annotation 3', 'note', '2023-01-02T12:00:00Z'),
-		('bm4', 'vol2', 'Sample text 4', 'Sample annotation 4', 'highlight', '2023-01-01T12:00:00Z'),
-		('bm5', 'vol3', NULL, NULL, 'bookmark', '2023-01-05T12:00:00Z');
+		INSERT INTO Bookmark (BookmarkID, VolumeID, Text, Annotation, Type, DateCreated, Color) VALUES
+		('bm1', 'vol1', 'Sample text 1', 'Sample annotation 1', 'highlight', '2023-01-04T12:00:00Z', '0'),
+		('bm2', 'vol1', 'Sample text 2', NULL, 'highlight', '2023-01-03T12:00:00Z', '1'),
+		('bm3', 'vol2', NULL, 'Sample annotation 3', 'note', '2023-01-02T12:00:00Z', '2'),
+		('bm4', 'vol2', 'Sample text 4', 'Sample annotation 4', 'highlight', '2023-01-01T12:00:00Z', '3'),
+		('bm5', 'vol3', NULL, NULL, 'bookmark', '2023-01-05T12:00:00Z', '4');
 	`)
 	if err != nil {
 		db.Close()
@@ -99,11 +100,11 @@ func TestGetBookmarks(t *testing.T) {
 		}
 	}
 
-	// Check that NULL Annotation values are replaced with 'None'
+	// Check that NULL Annotation values are replaced with ''
 	for _, bm := range bookmarks {
 		if bm.BookmarkID == "bm2" {
-			if bm.Annotation != "None" {
-				t.Errorf("Expected NULL Annotation to be replaced with 'None', got '%s'", bm.Annotation)
+			if bm.Annotation != "" {
+				t.Errorf("Expected NULL Annotation to be replaced with '', got '%s'", bm.Annotation)
 			}
 		}
 	}
@@ -118,7 +119,7 @@ func TestGetBookmarksWithEmptyDB(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	dbPath := filepath.Join(tempDir, "EmptyKoboReader.sqlite")
-	
+
 	// Create an empty database with the table but no data
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -132,7 +133,8 @@ func TestGetBookmarksWithEmptyDB(t *testing.T) {
 			Text TEXT,
 			Annotation TEXT,
 			Type TEXT,
-			DateCreated TEXT
+			DateCreated TEXT,
+			Color TEXT
 		);
 	`)
 	if err != nil {

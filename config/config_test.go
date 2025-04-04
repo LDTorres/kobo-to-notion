@@ -7,7 +7,7 @@ import (
 
 // MockEnvLoader implements EnvLoader for testing
 type MockEnvLoader struct {
-	values map[string]string
+	values    map[string]string
 	loadError error
 }
 
@@ -45,7 +45,7 @@ CERT_PATH=/path/to/cert
 	if err != nil {
 		t.Fatalf("Failed to create test .env file: %v", err)
 	}
-	
+
 	// Rename the original .env file if it exists
 	_, err = os.Stat(".env")
 	originalExists := !os.IsNotExist(err)
@@ -55,19 +55,19 @@ CERT_PATH=/path/to/cert
 			t.Fatalf("Failed to backup original .env file: %v", err)
 		}
 	}
-	
+
 	// Move test file to .env
 	err = os.Rename(".env.test", ".env")
 	if err != nil {
 		t.Fatalf("Failed to move test .env file: %v", err)
 	}
-	
+
 	// Test LoadEnv function
 	err = LoadEnv()
 	if err != nil {
 		t.Errorf("LoadEnv() error = %v, want nil", err)
 	}
-	
+
 	// Clean up and restore original .env if it existed
 	os.Remove(".env")
 	if originalExists {
@@ -83,14 +83,13 @@ func TestGetConfigWithLoader(t *testing.T) {
 		mock.SetEnv("NOTION_DATABASE_ID", "test_database_id")
 		mock.SetEnv("KOBO_DB_PATH", "/path/to/kobo.db")
 		mock.SetEnv("CERT_PATH", "/path/to/cert")
-		mock.SetEnv("CREATE_BOOKMARKS_INDIVIDUALLY", "false")
-		
+
 		config, err := GetConfigWithLoader(mock)
-		
+
 		if err != nil {
 			t.Errorf("GetConfigWithLoader() error = %v, want nil", err)
 		}
-		
+
 		if config.NotionToken != "test_token" {
 			t.Errorf("config.NotionToken = %v, want %v", config.NotionToken, "test_token")
 		}
@@ -103,95 +102,26 @@ func TestGetConfigWithLoader(t *testing.T) {
 		if config.CertPath != "/path/to/cert" {
 			t.Errorf("config.CertPath = %v, want %v", config.CertPath, "/path/to/cert")
 		}
-		if config.CreateIndividualBookmarks != false {
-			t.Errorf("config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, false)
-		}
 	})
-	
-	// Test default value for CreateIndividualBookmarks
-	t.Run("Default CreateIndividualBookmarks", func(t *testing.T) {
-		mock := NewMockEnvLoader()
-		mock.SetEnv("NOTION_TOKEN", "test_token")
-		mock.SetEnv("NOTION_DATABASE_ID", "test_database_id")
-		mock.SetEnv("KOBO_DB_PATH", "/path/to/kobo.db")
-		mock.SetEnv("CERT_PATH", "/path/to/cert")
-		// Not setting CREATE_BOOKMARKS_INDIVIDUALLY
-		
-		config, err := GetConfigWithLoader(mock)
-		
-		if err != nil {
-			t.Errorf("GetConfigWithLoader() error = %v, want nil", err)
-		}
-		
-		// Should default to true
-		if config.CreateIndividualBookmarks != true {
-			t.Errorf("Default config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, true)
-		}
-	})
-	
-	// Test different values for CreateIndividualBookmarks
-	t.Run("Different CreateIndividualBookmarks values", func(t *testing.T) {
-		tests := []struct{
-			name string
-			value string
-			want bool
-		}{
-			{
-				name: "true value",
-				value: "true",
-				want: true,
-			},
-			{
-				name: "false value",
-				value: "false",
-				want: false,
-			},
-			{
-				name: "invalid value",
-				value: "invalid",
-				want: false, // Should be false if not "true"
-			},
-		}
-		
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				mock := NewMockEnvLoader()
-				mock.SetEnv("NOTION_TOKEN", "test_token")
-				mock.SetEnv("NOTION_DATABASE_ID", "test_database_id")
-				mock.SetEnv("KOBO_DB_PATH", "/path/to/kobo.db")
-				mock.SetEnv("CREATE_BOOKMARKS_INDIVIDUALLY", tt.value)
-				
-				config, err := GetConfigWithLoader(mock)
-				
-				if err != nil {
-					t.Errorf("GetConfigWithLoader() error = %v, want nil", err)
-				}
-				
-				if config.CreateIndividualBookmarks != tt.want {
-					t.Errorf("config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, tt.want)
-				}
-			})
-		}
-	})
-	
+
 	// Test with missing values
 	t.Run("Missing values", func(t *testing.T) {
 		mock := NewMockEnvLoader()
 		// Not setting required values
-		
+
 		_, err := GetConfigWithLoader(mock)
-		
+
 		if err == nil {
 			t.Error("GetConfigWithLoader() error = nil, want error for missing env vars")
 		}
 	})
-	
+
 	// Test with some values missing
 	t.Run("Some values missing", func(t *testing.T) {
-		tests := []struct{
-			name string
+		tests := []struct {
+			name      string
 			setupMock func(*MockEnvLoader)
-			wantErr bool
+			wantErr   bool
 		}{
 			{
 				name: "Missing NOTION_TOKEN",
@@ -230,14 +160,14 @@ func TestGetConfigWithLoader(t *testing.T) {
 				wantErr: false,
 			},
 		}
-		
+
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mock := NewMockEnvLoader()
 				tt.setupMock(mock)
-				
+
 				_, err := GetConfigWithLoader(mock)
-				
+
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GetConfigWithLoader() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -252,22 +182,20 @@ func TestGetConfig(t *testing.T) {
 	os.Setenv("NOTION_DATABASE_ID", "test_database_id")
 	os.Setenv("KOBO_DB_PATH", "/path/to/kobo.db")
 	os.Setenv("CERT_PATH", "/path/to/cert")
-	os.Setenv("CREATE_BOOKMARKS_INDIVIDUALLY", "false")
-	
+
 	// Test actual GetConfig
 	config, err := GetConfig()
-	
+
 	if err != nil {
 		t.Errorf("GetConfig() error = %v, want nil", err)
 	}
-	
+
 	// Cleanup
 	os.Unsetenv("NOTION_TOKEN")
 	os.Unsetenv("NOTION_DATABASE_ID")
 	os.Unsetenv("KOBO_DB_PATH")
 	os.Unsetenv("CERT_PATH")
-	os.Unsetenv("CREATE_BOOKMARKS_INDIVIDUALLY")
-	
+
 	// Assert expected values
 	if config.NotionToken != "test_token" {
 		t.Errorf("config.NotionToken = %v, want %v", config.NotionToken, "test_token")
@@ -280,8 +208,5 @@ func TestGetConfig(t *testing.T) {
 	}
 	if config.CertPath != "/path/to/cert" {
 		t.Errorf("config.CertPath = %v, want %v", config.CertPath, "/path/to/cert")
-	}
-	if config.CreateIndividualBookmarks != false {
-		t.Errorf("config.CreateIndividualBookmarks = %v, want %v", config.CreateIndividualBookmarks, false)
 	}
 }

@@ -58,27 +58,19 @@ NOTION_TOKEN={replace_with_your_notion_integration_token}
 NOTION_DATABASE_ID={replace_with_your_notion_database_id}
 KOBO_DB_PATH=/mnt/onboard/.kobo/KoboReader.sqlite
 CERT_PATH=/mnt/onboard/.adds/notion_sync/certs/cacert.pem
-CREATE_BOOKMARKS_INDIVIDUALLY=true
 ```
 
 - `NOTION_TOKEN`: The integration token you copied in step 1.
 - `NOTION_DATABASE_ID`: The ID of your Notion database, obtainable from the database URL.
 - `KOBO_DB_PATH`: Path to the `KoboReader.sqlite` file on your Kobo device.
 - `CERT_PATH`: Path to the SSL certificate required for HTTPS connections.
-- `CREATE_BOOKMARKS_INDIVIDUALLY`: Set to "true" to create a separate page for each highlight (default behavior), or "false" to group all highlights from the same book on a single page.
 
 ### Highlight Organization Options
 
-The tool provides two different ways to organize your highlights in Notion:
-
-1. **Individual Mode** (default): Each highlight is created as a separate page in Notion, with its own properties for book title, highlight text, annotation, etc.
-
-2. **Grouped Mode**: All highlights from the same book are grouped together on a single page, making it easier to review all highlights from a particular book in one place. In this mode, the tool will:
+All highlights from the same book are grouped together on a single page, making it easier to review all highlights from a particular book in one place. In this mode, the tool will:
    - Create a page for each book
    - Add all highlights as content blocks in the page
-   - If you run the sync multiple times, existing pages will be updated by replacing all blocks with the current set of highlights (preventing duplicates)
-
-To switch between modes, set the `CREATE_BOOKMARKS_INDIVIDUALLY` environment variable to "true" or "false".
+   - If you run the sync multiple times, existing pages will be updated by only updating or deleting the required highlights
 
 ### 5.3 Create a Shortcut in NickelMenu
 

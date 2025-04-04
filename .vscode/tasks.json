@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Run",
+      "type": "shell",
+      "command": "go run main.go",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "revealProblems": "onProblem",
+        "echo": true,
+        "showReuseMessage": true
+      },
+      "problemMatcher": "$go"
+    },
+    {
       "label": "Setup",
       "type": "shell",
       "command": "bash ./scripts/setup.sh",

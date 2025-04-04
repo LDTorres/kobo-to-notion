@@ -75,3 +75,25 @@ func TestParseKoboBookmarkDate(t *testing.T) {
 		}
 	}
 }
+
+func TestSplitText(t *testing.T) {
+	text := "Hello, world!"
+	tests := []struct {
+		text     string
+		maxLength int
+		expected []string
+	}{
+		{text, 10, []string{"Hello, worl", "d!"}},
+		{text, 11, []string{"Hello, worl", "d!"}},
+		{text, 12, []string{"Hello, world ", "!"}},
+		{text, 13, []string{text}},
+		{text, 14, []string{text}},
+	}
+
+	for _, test := range tests {
+		result := SplitText(test.text, test.maxLength)
+		if len(result) != len(test.expected) {
+			t.Errorf("SplitText(%q, %d) = %v; want: %v", test.text, test.maxLength, result, test.expected)
+		}
+	}
+}

@@ -13,6 +13,7 @@ type Bookmark struct {
 	Annotation  string
 	Type        string
 	DateCreated string
+	Color       string
 }
 
 // DatabaseAccessor defines an interface for database operations
@@ -49,9 +50,10 @@ func queryBookmarks(db *sql.DB) ([]Bookmark, error) {
       BookmarkID,
       VolumeID,
       IFNULL(Text, '') AS Text,
-      IFNULL(Annotation, 'None') AS Annotation,
+      IFNULL(Annotation, '') AS Annotation,
       Type,
-      DateCreated
+      DateCreated,
+      Color
     FROM Bookmark
     WHERE Annotation IS NOT NULL OR Text IS NOT NULL
     ORDER BY DateCreated DESC;
@@ -66,7 +68,7 @@ func queryBookmarks(db *sql.DB) ([]Bookmark, error) {
 	var bookmarks []Bookmark
 	for rows.Next() {
 		var bm Bookmark
-		if err := rows.Scan(&bm.BookmarkID, &bm.VolumeID, &bm.Text, &bm.Annotation, &bm.Type, &bm.DateCreated); err != nil {
+		if err := rows.Scan(&bm.BookmarkID, &bm.VolumeID, &bm.Text, &bm.Annotation, &bm.Type, &bm.DateCreated, &bm.Color); err != nil {
 			return nil, err
 		}
 		bookmarks = append(bookmarks, bm)

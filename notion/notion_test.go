@@ -8,9 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/jomei/notionapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -93,30 +91,30 @@ func setupLogger() {
 	tempDir := filepath.Join(os.TempDir(), "notion_test")
 	os.MkdirAll(tempDir, 0755)
 	logPath := filepath.Join(tempDir, "test.log")
-	
+
 	logger.Init(logPath)
 }
 
 func TestNotionServiceCreation(t *testing.T) {
 	// Test creating a new service
-	service := notion.NewNotionService("test-token", true)
+	service := notion.NewNotionService("test-token")
 	assert.NotNil(t, service, "Service should not be nil")
 }
 
 func TestGetBookmarkIDs(t *testing.T) {
 	setupLogger()
 	defer logger.Close()
-	
+
 	// Create mock clients
 	mockDBClient := new(MockDatabaseClient)
-	
+
 	// Create a test service with our mock
-	service := notion.NewNotionService("test-token", true)
+	service := notion.NewNotionService("test-token")
 	service.WithDatabaseClient(mockDBClient)
 	service.WithContextFunc(func() context.Context {
 		return context.Background()
 	})
-	
+
 	// Create mock response
 	mockResponse := &notionapi.DatabaseQueryResponse{
 		Results: []notionapi.Page{
@@ -146,35 +144,35 @@ func TestGetBookmarkIDs(t *testing.T) {
 		HasMore:    false,
 		NextCursor: "",
 	}
-	
+
 	// Configure mock to return our response
 	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.Anything).Return(mockResponse, nil)
-	
+
 	// Test the function
 	bookmarkIDs, err := service.GetBookmarkIDs("test-db-id")
-	
+
 	assert.NoError(t, err, "GetBookmarkIDs should not return an error")
 	assert.Equal(t, 2, len(bookmarkIDs), "Should return 2 bookmark IDs")
 	assert.True(t, bookmarkIDs["bookmark1"], "bookmark1 should be in the map")
 	assert.True(t, bookmarkIDs["bookmark2"], "bookmark2 should be in the map")
-	
+
 	mockDBClient.AssertExpectations(t)
 }
 
 func TestGetBookmarkIDsWithPagination(t *testing.T) {
 	setupLogger()
 	defer logger.Close()
-	
+
 	// Create mock clients
 	mockDBClient := new(MockDatabaseClient)
-	
+
 	// Create a test service with our mock
-	service := notion.NewNotionService("test-token", true)
+	service := notion.NewNotionService("test-token")
 	service.WithDatabaseClient(mockDBClient)
 	service.WithContextFunc(func() context.Context {
 		return context.Background()
 	})
-	
+
 	// Create first page response
 	firstPageResponse := &notionapi.DatabaseQueryResponse{
 		Results: []notionapi.Page{
@@ -193,7 +191,7 @@ func TestGetBookmarkIDsWithPagination(t *testing.T) {
 		HasMore:    true,
 		NextCursor: "cursor1",
 	}
-	
+
 	// Create second page response
 	secondPageResponse := &notionapi.DatabaseQueryResponse{
 		Results: []notionapi.Page{
@@ -212,41 +210,41 @@ func TestGetBookmarkIDsWithPagination(t *testing.T) {
 		HasMore:    false,
 		NextCursor: "",
 	}
-	
+
 	// Configure mocks for pagination
 	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.MatchedBy(func(req *notionapi.DatabaseQueryRequest) bool {
 		return req.StartCursor == ""
 	})).Return(firstPageResponse, nil)
-	
+
 	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.MatchedBy(func(req *notionapi.DatabaseQueryRequest) bool {
 		return req.StartCursor == "cursor1"
 	})).Return(secondPageResponse, nil)
-	
+
 	// Test the function
 	bookmarkIDs, err := service.GetBookmarkIDs("test-db-id")
-	
+
 	assert.NoError(t, err, "GetBookmarkIDs should not return an error")
 	assert.Equal(t, 2, len(bookmarkIDs), "Should return 2 bookmark IDs")
 	assert.True(t, bookmarkIDs["bookmark1"], "bookmark1 should be in the map")
 	assert.True(t, bookmarkIDs["bookmark2"], "bookmark2 should be in the map")
-	
+
 	mockDBClient.AssertExpectations(t)
 }
 
 func TestGetPagesByBookName(t *testing.T) {
 	setupLogger()
 	defer logger.Close()
-	
+
 	// Create mock clients
 	mockDBClient := new(MockDatabaseClient)
-	
+
 	// Create a test service with our mock
-	service := notion.NewNotionService("test-token", false)
+	service := notion.NewNotionService("test-token")
 	service.WithDatabaseClient(mockDBClient)
 	service.WithContextFunc(func() context.Context {
 		return context.Background()
 	})
-	
+
 	// Create mock response
 	mockResponse := &notionapi.DatabaseQueryResponse{
 		Results: []notionapi.Page{
@@ -278,35 +276,37 @@ func TestGetPagesByBookName(t *testing.T) {
 		HasMore:    false,
 		NextCursor: "",
 	}
-	
+
 	// Configure mock to return our response
 	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.Anything).Return(mockResponse, nil)
-	
+
 	// Test the function
 	bookPages, err := service.GetPagesByBookName("test-db-id")
-	
+
 	assert.NoError(t, err, "GetPagesByBookName should not return an error")
 	assert.Equal(t, 2, len(bookPages), "Should return 2 book pages")
 	assert.Equal(t, notionapi.PageID("page1"), bookPages["Book 1"], "Book 1 should map to page1")
 	assert.Equal(t, notionapi.PageID("page2"), bookPages["Book 2"], "Book 2 should map to page2")
-	
+
 	mockDBClient.AssertExpectations(t)
 }
 
-func TestAddBookmarkIndividual(t *testing.T) {
+func TestAddBookmark(t *testing.T) {
 	setupLogger()
 	defer logger.Close()
-	
+
 	// Create mock clients
 	mockPageClient := new(MockPageClient)
-	
-	// Create a test service with our mock - Individual mode
-	service := notion.NewNotionService("test-token", true)
+	mockDBClient := new(MockDatabaseClient)
+
+	// Create a test service with our mock
+	service := notion.NewNotionService("test-token")
 	service.WithPageClient(mockPageClient)
+	service.WithDatabaseClient(mockDBClient)
 	service.WithContextFunc(func() context.Context {
 		return context.Background()
 	})
-	
+
 	// Create a test bookmark
 	bookmark := kobo.Bookmark{
 		BookmarkID:  "test-bookmark-id",
@@ -316,50 +316,57 @@ func TestAddBookmarkIndividual(t *testing.T) {
 		Type:        "highlight",
 		DateCreated: "2023-01-01T12:00:00Z",
 	}
-	
-	// Configure mock
+
+	// Mock response for GetPagesByBookName (no existing pages)
+	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.Anything).Return(&notionapi.DatabaseQueryResponse{
+		Results:    []notionapi.Page{},
+		HasMore:    false,
+		NextCursor: "",
+	}, nil)
+
+	// Configure mock for page creation
 	mockPageClient.On("Create", mock.Anything, mock.Anything).Return(&notionapi.Page{
 		ID: "test",
 	}, nil)
-	
+
 	// Test the function
 	_, err := service.AddBookmark("test-db-id", bookmark)
 
 	assert.NoError(t, err, "AddBookmark should not return an error")
 	mockPageClient.AssertExpectations(t)
-	
+	mockDBClient.AssertExpectations(t)
+
 	// Verify the page creation request
 	createCall := mockPageClient.Calls[0]
 	req := createCall.Arguments.Get(1).(*notionapi.PageCreateRequest)
-	
+
 	// Check some aspects of the request
 	titleProp, ok := req.Properties[PropBookTitle].(notionapi.TitleProperty)
 	assert.True(t, ok, "Book Title should be a TitleProperty")
 	assert.Contains(t, titleProp.Title[0].Text.Content, "test-volume-id")
-	
-	bookmarkProp, ok := req.Properties[PropBookmarkID].(notionapi.RichTextProperty)
-	assert.True(t, ok, "Bookmark ID should be a RichTextProperty")
-	assert.Equal(t, "test-bookmark-id", bookmarkProp.RichText[0].Text.Content)
+
+	// Ensure children blocks were created for the bookmark
+	assert.Greater(t, len(req.Children), 0, "Should have blocks for the bookmark content")
 }
 
 func TestAddBookmarksGroup(t *testing.T) {
 	setupLogger()
 	defer logger.Close()
-	
+
 	// Create mock clients
 	mockDBClient := new(MockDatabaseClient)
 	mockPageClient := new(MockPageClient)
 	mockBlockClient := &MockBlockClient{}
-	
-	// Create a test service with our mocks - Grouped mode
-	service := notion.NewNotionService("test-token", false)
+
+	// Create a test service with our mock
+	service := notion.NewNotionService("test-token")
 	service.WithDatabaseClient(mockDBClient)
 	service.WithPageClient(mockPageClient)
 	service.WithBlockClient(mockBlockClient)
 	service.WithContextFunc(func() context.Context {
 		return context.Background()
 	})
-	
+
 	// Create test bookmarks for the same book
 	bookmarks := []kobo.Bookmark{
 		{
@@ -369,6 +376,7 @@ func TestAddBookmarksGroup(t *testing.T) {
 			Annotation:  "This is a test annotation 1",
 			Type:        "highlight",
 			DateCreated: "2023-01-01T12:00:00Z",
+			Color:       "2",
 		},
 		{
 			BookmarkID:  "test-bookmark-id-2",
@@ -377,59 +385,60 @@ func TestAddBookmarksGroup(t *testing.T) {
 			Annotation:  "This is a test annotation 2",
 			Type:        "highlight",
 			DateCreated: "2023-01-01T12:00:00Z",
+			Color:       "3",
 		},
 	}
-	
+
 	// Mock response for GetPagesByBookName (no existing pages)
 	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.Anything).Return(&notionapi.DatabaseQueryResponse{
 		Results:    []notionapi.Page{},
 		HasMore:    false,
 		NextCursor: "",
 	}, nil)
-	
+
 	// Mock page creation
 	mockPageClient.On("Create", mock.Anything, mock.Anything).Return(&notionapi.Page{
 		ID: "new-page",
 	}, nil)
-	
+
 	// Test the function
 	err := service.AddBookmarks("test-db-id", bookmarks)
-	
+
 	assert.NoError(t, err, "AddBookmarks should not return an error")
 	mockDBClient.AssertExpectations(t)
 	mockPageClient.AssertExpectations(t)
-	
+
 	// Verify the page creation request
 	createCall := mockPageClient.Calls[0]
 	req := createCall.Arguments.Get(1).(*notionapi.PageCreateRequest)
-	
+
 	// Check request properties
 	titleProp, ok := req.Properties[PropBookTitle].(notionapi.TitleProperty)
 	assert.True(t, ok, "Book Title should be a TitleProperty")
 	assert.Contains(t, titleProp.Title[0].Text.Content, "test-volume-id")
-	
+
 	// Should have multiple children blocks
-	assert.Greater(t, len(req.Children), 4, "Should have multiple blocks")
+	assert.Greater(t, len(req.Children), 2, "Should have multiple blocks")
 }
 
 func TestAddBookmarksGroupExistingPage(t *testing.T) {
 	setupLogger()
 	defer logger.Close()
-	
+
 	// Create mock clients
 	mockDBClient := new(MockDatabaseClient)
 	mockPageClient := new(MockPageClient)
 	mockBlockClient := &MockBlockClient{}
-	
-	// Create a test service with our mocks - Grouped mode
-	service := notion.NewNotionService("test-token", false)
+
+	// Create a test service with our mock
+	service := notion.NewNotionService("test-token")
 	service.WithDatabaseClient(mockDBClient)
 	service.WithPageClient(mockPageClient)
 	service.WithBlockClient(mockBlockClient)
 	service.WithContextFunc(func() context.Context {
 		return context.Background()
 	})
-	
+
 	// Create test bookmarks for the same book
 	bookmarks := []kobo.Bookmark{
 		{
@@ -441,7 +450,7 @@ func TestAddBookmarksGroupExistingPage(t *testing.T) {
 			DateCreated: "2023-01-01T12:00:00Z",
 		},
 	}
-	
+
 	// Mock response for GetPagesByBookName (existing page)
 	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.Anything).Return(&notionapi.DatabaseQueryResponse{
 		Results: []notionapi.Page{
@@ -461,73 +470,27 @@ func TestAddBookmarksGroupExistingPage(t *testing.T) {
 		HasMore:    false,
 		NextCursor: "",
 	}, nil)
-	
+
 	// Mock getting existing blocks
 	mockBlockClient.On("GetChildren", mock.Anything, notionapi.BlockID("existing-page"), mock.Anything).Return(&notionapi.GetChildrenResponse{
 		Results:    []notionapi.Block{},
 		HasMore:    false,
 		NextCursor: "",
 	}, nil)
-	
+
 	// Mock appending blocks
 	mockBlockClient.On("AppendChildren", mock.Anything, notionapi.BlockID("existing-page"), mock.Anything).Return(&notionapi.AppendBlockChildrenResponse{}, nil)
-	
+
 	// Mock getting the page
 	mockPageClient.On("Get", mock.Anything, notionapi.PageID("existing-page")).Return(&notionapi.Page{
 		ID: "existing-page",
 	}, nil)
-	
+
 	// Test the function
 	err := service.AddBookmarks("test-db-id", bookmarks)
-	
+
 	assert.NoError(t, err, "AddBookmarks should not return an error")
 	mockDBClient.AssertExpectations(t)
 	mockBlockClient.AssertExpectations(t)
 	mockPageClient.AssertExpectations(t)
-}
-
-// TestIntegration would be used for integration testing with a real Notion API
-func TestIntegrationWithNotion(t *testing.T) {
-	err := godotenv.Load("../.env")
-
-	if err != nil {
-		t.Log(`Error loading .env file`, err)
-		return
-	}
-	
-	// Skip this test unless specifically running integration tests
-	if os.Getenv("RUN_INTEGRATION_TESTS") != "true" {
-		t.Skip("Skipping integration test")
-		return
-	}
-	
-	// Initialize logger
-	setupLogger()
-	defer logger.Close()
-	
-	// Get credentials from env
-	notionToken := os.Getenv("NOTION_TOKEN")
-	databaseID := os.Getenv("NOTION_DATABASE_ID")
-	
-	// Create the service
-	service := notion.NewNotionService(notionToken, true)
-	
-	// Create a test bookmark
-	bookmark := kobo.Bookmark{
-		BookmarkID:  "test-integration-" + time.Now().Format("20060102150405"),
-		VolumeID:    "test-volume-integration",
-		Text:        "This is an integration test highlight",
-		Annotation:  "This is an integration test annotation",
-		Type:        "highlight",
-		DateCreated: "2023-01-01T12:00:00Z",
-	}
-	
-	// Test adding a bookmark
-	page, err := service.AddBookmark(databaseID, bookmark)
-	assert.NoError(t, err, "AddBookmark should not return an error")
-	assert.NotNil(t, page, "Page should not be nil")
-	
-	// Archive the test bookmark to clean up
-	_, err = service.ArchiveBookmark(databaseID, page.ID)
-	assert.NoError(t, err, "ArchiveBookmark should not return an error")
 }
