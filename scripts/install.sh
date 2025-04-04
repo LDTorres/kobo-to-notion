@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e  # Exit immediately if a command exits with a non-zero status
 
 # Check if it's running from vscode task
 if [[ "$1" == "from-vscode" ]]; then
@@ -85,6 +86,10 @@ if [[ ! -d "${NM_DIR}" ]] ; then
 	echo "Can't find a .adds/nm directory, ${KOBO_MOUNT_POINT} doesn't appear to point to a Kobo eReader. Is nickel menu installed?"
 	exit 1
 fi
+
+# Remove old files
+rm -rf "$ADDS_DIR/notion_sync"
+rm -rf "$NM_DIR/notion_sync.conf"
 
 # Ask for NOTION_TOKEN
 read -p "Enter your NOTION_TOKEN: " NOTION_TOKEN
