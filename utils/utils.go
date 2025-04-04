@@ -76,10 +76,10 @@ func ContainsBlockRichText(text string, blocks []notionapi.Block) bool {
 
 func ContainsBookmark(text string, bookmarks []kobo.Bookmark) bool {
 	for _, bookmark := range bookmarks {
-		if strings.Contains(bookmark.Text, text) {
+		if bookmark.Text != "" && strings.Contains(text, bookmark.Text) {
 			return true
 		}
-		if strings.Contains(bookmark.Annotation, text) {
+		if bookmark.Annotation != "" && strings.Contains(text, bookmark.Annotation) {
 			return true
 		}
 	}

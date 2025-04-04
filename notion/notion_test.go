@@ -291,64 +291,6 @@ func TestGetPagesByBookName(t *testing.T) {
 	mockDBClient.AssertExpectations(t)
 }
 
-func TestAddBookmark(t *testing.T) {
-	setupLogger()
-	defer logger.Close()
-
-	// Create mock clients
-	mockPageClient := new(MockPageClient)
-	mockDBClient := new(MockDatabaseClient)
-
-	// Create a test service with our mock
-	service := notion.NewNotionService("test-token")
-	service.WithPageClient(mockPageClient)
-	service.WithDatabaseClient(mockDBClient)
-	service.WithContextFunc(func() context.Context {
-		return context.Background()
-	})
-
-	// Create a test bookmark
-	bookmark := kobo.Bookmark{
-		BookmarkID:  "test-bookmark-id",
-		VolumeID:    "test-volume-id",
-		Text:        "This is a test highlight",
-		Annotation:  "This is a test annotation",
-		Type:        "highlight",
-		DateCreated: "2023-01-01T12:00:00Z",
-	}
-
-	// Mock response for GetPagesByBookName (no existing pages)
-	mockDBClient.On("Query", mock.Anything, notionapi.DatabaseID("test-db-id"), mock.Anything).Return(&notionapi.DatabaseQueryResponse{
-		Results:    []notionapi.Page{},
-		HasMore:    false,
-		NextCursor: "",
-	}, nil)
-
-	// Configure mock for page creation
-	mockPageClient.On("Create", mock.Anything, mock.Anything).Return(&notionapi.Page{
-		ID: "test",
-	}, nil)
-
-	// Test the function
-	_, err := service.AddBookmark("test-db-id", bookmark)
-
-	assert.NoError(t, err, "AddBookmark should not return an error")
-	mockPageClient.AssertExpectations(t)
-	mockDBClient.AssertExpectations(t)
-
-	// Verify the page creation request
-	createCall := mockPageClient.Calls[0]
-	req := createCall.Arguments.Get(1).(*notionapi.PageCreateRequest)
-
-	// Check some aspects of the request
-	titleProp, ok := req.Properties[PropBookTitle].(notionapi.TitleProperty)
-	assert.True(t, ok, "Book Title should be a TitleProperty")
-	assert.Contains(t, titleProp.Title[0].Text.Content, "test-volume-id")
-
-	// Ensure children blocks were created for the bookmark
-	assert.Greater(t, len(req.Children), 0, "Should have blocks for the bookmark content")
-}
-
 func TestAddBookmarksGroup(t *testing.T) {
 	setupLogger()
 	defer logger.Close()

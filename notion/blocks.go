@@ -36,27 +36,27 @@ func (s *NotionService) getAllBlocksFromPage(pageID notionapi.PageID) ([]notiona
 	return blocks, nil
 }
 
-// createBookmarkBlocks creates a set of blocks for a bookmark
-func (s *NotionService) createBookmarkBlocks(bookmark kobo.Bookmark) []notionapi.Block {
-	colorsMap := map[string]notionapi.Color{
-		"0": notionapi.ColorRed,
-		"1": notionapi.ColorOrange,
-		"2": notionapi.ColorYellow,
+func getColorsMap() map[string]notionapi.Color {
+	return map[string]notionapi.Color{
+		"0": notionapi.ColorOrange,
+		"1": notionapi.ColorPurple,
+		"2": notionapi.ColorBlue,
 		"3": notionapi.ColorGreen,
-		"4": notionapi.ColorBlue,
-		"5": notionapi.ColorPurple,
-		"6": notionapi.ColorPink,
-		"7": notionapi.ColorBrown,
+		"4": notionapi.ColorRed,
 	}
+}
 
-	if bookmark.Text == "" && bookmark.Annotation == "" {
+// createBookmarkBlocks creates a set of blocks for a bookmark
+func (s *NotionService) createBookmarkTextBlocks(bookmark kobo.Bookmark) []notionapi.Block {
+	colorsMap := getColorsMap();
+
+	if bookmark.Text == "" {
 		return []notionapi.Block{}
 	}
 
 	// Split text into chunks of 2000 characters
 	const bookMarkTextSplit = 2000
 	textChunks := utils.SplitText(bookmark.Text, bookMarkTextSplit)
-	annotationChunks := utils.SplitText(bookmark.Annotation, bookMarkTextSplit)
 
 	// Create notionapi.RichText blocks for each chunk
 	paragraphBlocks := []notionapi.RichText{}
@@ -91,6 +91,34 @@ func (s *NotionService) createBookmarkBlocks(bookmark kobo.Bookmark) []notionapi
 
 	blocks := []notionapi.Block{}
 
+	if len(paragraphBlocks) > 0 {
+		blocks = append(blocks, &notionapi.QuoteBlock{
+			BasicBlock: notionapi.BasicBlock{
+				Object: notionapi.ObjectTypeBlock,
+				Type:   notionapi.BlockTypeQuote,
+			},
+			Quote: notionapi.Quote{
+				RichText: paragraphBlocks,
+			},
+		})
+	}
+
+	return blocks
+}
+
+func (s *NotionService) createBookmarkAnnotationBlocks(bookmark kobo.Bookmark) []notionapi.Block {
+	colorsMap := getColorsMap();
+	
+	if bookmark.Annotation == "" {
+		return []notionapi.Block{}
+	}
+
+	// Split text into chunks of 2000 characters
+	const bookMarkTextSplit = 2000
+	annotationChunks := utils.SplitText(bookmark.Annotation, bookMarkTextSplit)
+
+	blocks := []notionapi.Block{}
+
 	// Create notionapi.RichText blocks for each chunk
 	annotationBlocks := []notionapi.RichText{}
 
@@ -120,18 +148,6 @@ func (s *NotionService) createBookmarkBlocks(bookmark kobo.Bookmark) []notionapi
 				},
 			})
 		}
-	}
-
-	if len(paragraphBlocks) > 0 {
-		blocks = append(blocks, &notionapi.QuoteBlock{
-			BasicBlock: notionapi.BasicBlock{
-				Object: notionapi.ObjectTypeBlock,
-				Type:   notionapi.BlockTypeQuote,
-			},
-			Quote: notionapi.Quote{
-				RichText: paragraphBlocks,
-			},
-		})
 	}
 
 	if len(annotationBlocks) > 0 {

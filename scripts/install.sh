@@ -74,12 +74,6 @@ if [[ -z "${KOBO_MOUNT_POINT}" ]] ; then
 	exit 1
 fi
 
-KOBO_DIR="${KOBO_MOUNT_POINT}/.kobo"
-if [[ ! -d "${KOBO_DIR}" ]] ; then
-	echo "Can't find a .kobo directory, ${KOBO_MOUNT_POINT} doesn't appear to point to a Kobo eReader... Is one actually mounted?"
-	exit 1
-fi
-
 ADDS_DIR="${KOBO_MOUNT_POINT}/.adds"
 if [[ ! -d "${ADDS_DIR}" ]] ; then
 	echo "Can't find a .adds directory, ${KOBO_MOUNT_POINT} doesn't appear to point to a Kobo eReader... Is one actually mounted?"

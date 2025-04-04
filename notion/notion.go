@@ -33,18 +33,25 @@ func GetBookPagesByName(databaseID string) (map[string]notionapi.PageID, error) 
 	return defaultService.GetPagesByBookName(databaseID)
 }
 
-// AddBookmarkToNotion adds a new bookmark to Notion using the global client
-func AddBookmarkToNotion(databaseID string, bookmark kobo.Bookmark) (*notionapi.Page, error) {
-	if defaultService == nil {
-		return nil, errors.New(ErrNotionClientNotInitialized)
-	}
-	return defaultService.AddBookmark(databaseID, bookmark)
-}
-
 // AddBookmarksToNotion adds multiple bookmarks to Notion in a batch using the global client
 func AddBookmarksToNotion(databaseID string, bookmarks []kobo.Bookmark) error {
 	if defaultService == nil {
 		return errors.New(ErrNotionClientNotInitialized)
 	}
 	return defaultService.AddBookmarks(databaseID, bookmarks)
+}
+
+func (s *NotionService) ArchivePage(databaseID string, pageID notionapi.PageID) (error) {
+	_, err := s.pageClient.Update(s.contextFunc(), pageID, &notionapi.PageUpdateRequest{
+		Archived: true, 
+		Properties: nil, 
+		Icon: nil, 
+		Cover: nil,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

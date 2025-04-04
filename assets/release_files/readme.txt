@@ -16,7 +16,7 @@ A new menu item called **Notion Sync** should now appear in the Nikel menu.
 
 4. If you want to uninstall the plugin just remove the following files:
 
-.kobo/.adds/nm/notion_sync.conf
-.kobo/.adds/nm/notion_sync
+.adds/nm/notion_sync.conf
+.adds/notion_sync
 
 Enjoy!!
